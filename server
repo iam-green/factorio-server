@@ -1,0 +1,239 @@
+#!/bin/bash
+set -e
+
+SERVER_DIRECTORY=.
+LIBRARY_DIRECTORY=~/.iam-green
+FORCE_REPLACE=false
+VERSION=stable
+MAP_NAME=factorio
+SINARIO=freeplay
+SPACE_AGE_ENABLE=false
+
+usage() {
+  echo "Usage: $0 [OPTIONS]"
+  echo "Options:"
+  echo " -h, --help                               Show this help and exit"
+  echo " -v, --version <version>                  Select the Factorio Version"
+  echo " -m, --map-name <name>                    Select the Factorio Map Name"
+  echo " -s, --sinario <sinario>                  Select the Factorio Sinario"
+  echo " -sa, --space-age                         Enable the Factorio Space Age Mod"
+  echo " -d, -sd, --server-directory <directory>  Select the path to install the Factorio Server"
+  echo " -ld, --library-directory <directory>     Select the path to install the required libraries"
+  echo " -u  --update                             Update the script to the latest version"
+  echo " -f, --force-replace                      Force replace the Factorio Server"
+}
+
+has_argument() {
+  [[ ("$1" == *=* && -n ${1#*=}) || (! -z "$2" && "$2" != -*) ]]
+}
+
+extract_argument() {
+  echo "${2:-${1#*=}}"
+}
+
+handle_argument() {
+  while [ $# -gt 0 ]; do
+    case $1 in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -d | -sd | --server-directory | --serverDirectiry)
+      if ! has_argument $@; then
+        echo "Location not specified." >&2
+        usage
+        exit 1
+      fi
+      SERVER_DIRECTORY=$(extract_argument $@)
+      shift
+      ;;
+    -ld | --library-directory | --libraryDirectory)
+      if ! has_argument $@; then
+        echo "Location not specified." >&2
+        usage
+        exit 1
+      fi
+      LIBRARY_DIRECTORY=$(extract_argument $@)
+      shift
+      ;;
+    -v | --version)
+      if ! has_argument $@; then
+        echo "Version not specified." >&2
+        usage
+        exit 1
+      fi
+      VERSION=$(extract_argument $@)
+      shift
+      ;;
+    -m | --map-name)
+      if ! has_argument $@; then
+        echo "Map Name not specified." >&2
+        usage
+        exit 1
+      fi
+      MAP_NAME=$(extract_argument $@)
+      shift
+      ;;
+    -s | --sinario)
+      if ! has_argument $@; then
+        echo "Sinario not specified." >&2
+        usage
+        exit 1
+      fi
+      SINARIO=$(extract_argument $@)
+      shift
+      ;;
+    -sa | --space-age)
+      SPACE_AGE_ENABLE=true
+      ;;
+    -f | --force-replace)
+      FORCE_REPLACE=true
+      ;;
+    -u | --update)
+      curl -s -o ./server -L https://raw.githubusercontent.com/iam-green/factorio-server/main/server
+      chmod +x ./server
+      echo The update is complete, please re-run the code.
+      exit 0
+      ;;
+    *)
+      echo "Invalid option: $1" >&2
+      usage
+      exit 1
+      ;;
+    esac
+    shift
+  done
+}
+
+set_timezone() {
+  if [ $TZ ]; then
+    ln -sf /usr/share/zoneinfo/$TZ /etc/localtime
+  fi
+}
+
+create_group_user() {
+  if [ ! $UID ] || [ ! $GID ] || id -u $UID >/dev/null 2>&1 || getent group $GID >/dev/null 2>&1; then
+    USER=$([ $(uname) = "Darwin" ] && id -un $UID || getent passwd "$UID" | cut -d: -f1)
+    return 0
+  fi
+
+  if ! grep -q ":$GID:" /etc/group; then
+    groupadd -g "$GID" factorio
+  fi
+
+  if ! id "$UID" &>/dev/null; then
+    useradd -u "$UID" -g "$GID" -m factorio
+  fi
+
+  USER=$([ $(uname) = "Darwin" ] && id -un $UID || getent passwd "$UID" | cut -d: -f1)
+}
+
+directory_setting() {
+  if [ ! -d $SERVER_DIRECTORY ]; then
+    mkdir -p $SERVER_DIRECTORY
+  fi
+  if [ ! -d $LIBRARY_DIRECTORY ]; then
+    mkdir -p $LIBRARY_DIRECTORY
+  fi
+  SERVER_DIRECTORY=$(realpath $SERVER_DIRECTORY)
+  LIBRARY_DIRECTORY=$(realpath $LIBRARY_DIRECTORY)
+  if ! grep -qE '/docker|/lxc/' /proc/1/cgroup; then
+    ln -s $LIBRARY_DIRECTORY/factorio/mods $SERVER_DIRECTORY/mods
+  fi
+}
+
+set_chown() {
+  chown -R $USER $SERVER_DIRECTORY $LIBRARY_DIRECTORY
+}
+
+# download_factorio <factorio_version>  
+download_factorio() {
+  if [ $FORCE_REPLACE == "true" ]; then
+    rm -rf $LIBRARY_DIRECTORY/factorio
+  fi
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" "https://factorio.com/get-download/$1/headless/linux64")
+  if [[ "$http_code" =~ ^404$ ]]; then
+    echo "Factorio Version $1 does not exist."
+    exit 1
+  fi
+  if [ ! -d $LIBRARY_DIRECTORY/factorio ]; then
+    data=$(curl -s https://www.factorio.com/get-download/$1/headless/linux64)
+    url=$(echo "$data" | sed -n 's/.*<a href="\([^"]*\)".*/\1/p')
+    curl -s -o $LIBRARY_DIRECTORY/factorio.tar.gz $url
+    tar -xJvf $LIBRARY_DIRECTORY/factorio.tar.gz -C $LIBRARY_DIRECTORY &>/dev/null
+    rm -rf $LIBRARY_DIRECTORY/factorio.tar.gz
+  fi
+}
+
+# server_setting <map_name> <sinario>
+server_setting() {
+  if [ ! -f $SERVER_DIRECTORY/server-settings.json ]; then
+    cp $LIBRARY_DIRECTORY/factorio/data/server-settings.example.json $SERVER_DIRECTORY/server-settings.json
+  fi
+  if [ ! -f $SERVER_DIRECTORY/map-settings.json ]; then
+    cp $LIBRARY_DIRECTORY/factorio/data/map-settings.example.json $SERVER_DIRECTORY/map-settings.json
+  fi
+  if [ ! -f $SERVER_DIRECTORY/map-gen-settings.json ]; then
+    cp $LIBRARY_DIRECTORY/factorio/data/map-gen-settings.example.json $SERVER_DIRECTORY/map-gen-settings.json
+  fi
+  if [ ! -f $SERVER_DIRECTORY/$1.zip ]; then
+    sudo -u $USER $LIBRARY_DIRECTORY/factorio/bin/x64/factorio \
+      --create $SERVER_DIRECTORY/$1.zip \
+      --map-gen-settings $SERVER_DIRECTORY/map-gen-settings.json \
+      --map-settings $SERVER_DIRECTORY/map-settings.json
+  fi
+}
+
+mod_setting() {
+  if [ ! -d $LIBRARY_DIRECTORY/factorio/mods ]; then
+    mkdir -p $LIBRARY_DIRECTORY/factorio/mods
+  fi
+  mkdir -p $LIBRARY_DIRECTORY/factorio/mods
+  rm -rf $LIBRARY_DIRECTORY/factorio/mods/*
+  if [ $SPACE_AGE_ENABLE ]; then
+    echo '{"mods": [{"name": "base","enabled": true},
+      {"name": "elevated-rails","enabled": true},
+      {"name": "quality","enabled": true},
+      {"name": "space-age","enabled": true}]
+    }' > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
+  else
+    echo '{"mods": [{"name": "base","enabled": true},
+      {"name": "elevated-rails","enabled": false},
+      {"name": "quality","enabled": false},
+      {"name": "space-age","enabled": false}]
+    }' > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
+  fi
+}
+
+# start_server <map_name>
+start_server() {
+  sudo -u $USER $LIBRARY_DIRECTORY/factorio/bin/x64/factorio \
+    --start-server $SERVER_DIRECTORY/$1.zip \
+    --server-settings $SERVER_DIRECTORY/server-settings.json
+}
+
+if [[ $(uname) != "Linux" ]]; then
+  echo "This script only runs on Linux."
+  exit 1
+fi
+
+if [ $(uname -m) != "x86_64" ]; then
+  echo "This architecture is not supported."
+  exit 1
+fi
+
+
+handle_argument "$@"
+
+set_timezone
+directory_setting
+download_factorio $VERSION
+create_group_user
+set_chown
+server_setting $MAP_NAME
+mod_setting
+start_server $MAP_NAME
+
+if ! grep -qE '/docker|/lxc/' /proc/1/cgroup; then
+  rm -f $SERVER_DIRECTORY/mods
+fi
