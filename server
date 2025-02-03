@@ -137,9 +137,6 @@ directory_setting() {
   fi
   SERVER_DIRECTORY=$(realpath $SERVER_DIRECTORY)
   LIBRARY_DIRECTORY=$(realpath $LIBRARY_DIRECTORY)
-  if ! grep -qE '/docker|/lxc/' /proc/1/cgroup; then
-    ln -s $LIBRARY_DIRECTORY/factorio/mods $SERVER_DIRECTORY/mods
-  fi
 }
 
 set_chown() {
@@ -188,6 +185,9 @@ mod_setting() {
   if [ ! -d $LIBRARY_DIRECTORY/factorio/mods ]; then
     mkdir -p $LIBRARY_DIRECTORY/factorio/mods
   fi
+  if [ ! -d $SERVER_DIRECTORY/mods ]; then
+    mkdir -p $SERVER_DIRECTORY/mods
+  fi
   mkdir -p $LIBRARY_DIRECTORY/factorio/mods
   rm -rf $LIBRARY_DIRECTORY/factorio/mods/*
   if [ $SPACE_AGE_ENABLE ]; then
@@ -203,6 +203,7 @@ mod_setting() {
       {"name": "space-age","enabled": false}]
     }' > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
   fi
+  cp $SERVER_DIRECTORY/mods/* $LIBRARY_DIRECTORY/factorio/mods
 }
 
 # start_server <map_name>
@@ -226,9 +227,10 @@ fi
 handle_argument "$@"
 
 set_timezone
-directory_setting
-download_factorio $VERSION
 create_group_user
+directory_setting
+set_chown
+download_factorio $VERSION
 set_chown
 server_setting $MAP_NAME
 mod_setting
