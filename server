@@ -154,11 +154,9 @@ download_factorio() {
     exit 1
   fi
   if [ ! -d $LIBRARY_DIRECTORY/factorio ]; then
-    data=$(curl -s https://www.factorio.com/get-download/$1/headless/linux64)
-    url=$(echo "$data" | sed -n 's/.*<a href="\([^"]*\)".*/\1/p')
-    curl -s -o $LIBRARY_DIRECTORY/factorio.tar.gz $url
-    tar -xJvf $LIBRARY_DIRECTORY/factorio.tar.gz -C $LIBRARY_DIRECTORY &>/dev/null
-    rm -rf $LIBRARY_DIRECTORY/factorio.tar.gz
+    curl -s -o $LIBRARY_DIRECTORY/factorio.tar.xz -L https://www.factorio.com/get-download/$1/headless/linux64
+    tar -xJvf $LIBRARY_DIRECTORY/factorio.tar.xz -C $LIBRARY_DIRECTORY &>/dev/null
+    rm -rf $LIBRARY_DIRECTORY/factorio.tar.xz
   fi
 }
 
@@ -188,8 +186,6 @@ mod_setting() {
   if [ ! -d $SERVER_DIRECTORY/mods ]; then
     mkdir -p $SERVER_DIRECTORY/mods
   fi
-  mkdir -p $LIBRARY_DIRECTORY/factorio/mods
-  rm -rf $LIBRARY_DIRECTORY/factorio/mods/*
   if [ $SPACE_AGE_ENABLE ]; then
     echo '{"mods": [{"name": "base","enabled": true},
       {"name": "elevated-rails","enabled": true},
@@ -203,7 +199,8 @@ mod_setting() {
       {"name": "space-age","enabled": false}]
     }' > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
   fi
-  cp $SERVER_DIRECTORY/mods/* $LIBRARY_DIRECTORY/factorio/mods
+  rm -rf $LIBRARY_DIRECTORY/factorio/mods
+  cp -r $SERVER_DIRECTORY/mods $LIBRARY_DIRECTORY/factorio
 }
 
 # start_server <map_name>
@@ -229,13 +226,9 @@ handle_argument "$@"
 set_timezone
 create_group_user
 directory_setting
-set_chown
 download_factorio $VERSION
 set_chown
 server_setting $MAP_NAME
 mod_setting
+set_chown
 start_server $MAP_NAME
-
-if ! grep -qE '/docker|/lxc/' /proc/1/cgroup; then
-  rm -f $SERVER_DIRECTORY/mods
-fi
