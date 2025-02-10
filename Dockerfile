@@ -14,7 +14,7 @@ ENV UID=1000 \
 RUN mkdir -p /factorio
 WORKDIR /factorio
 RUN apt-get update -y
-RUN apt-get install -y libc6-dev curl sudo jq
+RUN apt-get install -y libc6-dev curl sudo
 COPY server .
 RUN chmod +x server
 EXPOSE 34197/udp
