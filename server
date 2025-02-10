@@ -167,13 +167,13 @@ server_setting() {
   if [ ! -f $SERVER_DIRECTORY/server-settings.json ]; then
     cp $LIBRARY_DIRECTORY/factorio/data/server-settings.example.json $SERVER_DIRECTORY/server-settings.json
   fi
-  if [ ! -f $SERVER_DIRECTORY/map-settings.json ]; then
-    cp $LIBRARY_DIRECTORY/factorio/data/map-settings.example.json $SERVER_DIRECTORY/map-settings.json
-  fi
-  if [ ! -f $SERVER_DIRECTORY/map-gen-settings.json ]; then
-    cp $LIBRARY_DIRECTORY/factorio/data/map-gen-settings.example.json $SERVER_DIRECTORY/map-gen-settings.json
-  fi
   if [ ! -f $SERVER_DIRECTORY/$1.zip ]; then
+    if [ ! -f $SERVER_DIRECTORY/map-settings.json ]; then
+      cp $LIBRARY_DIRECTORY/factorio/data/map-settings.example.json $SERVER_DIRECTORY/map-settings.json
+    fi
+    if [ ! -f $SERVER_DIRECTORY/map-gen-settings.json ]; then
+      cp $LIBRARY_DIRECTORY/factorio/data/map-gen-settings.example.json $SERVER_DIRECTORY/map-gen-settings.json
+    fi
     sudo -u $USER $LIBRARY_DIRECTORY/factorio/bin/x64/factorio \
       --create $SERVER_DIRECTORY/$1.zip \
       --map-gen-settings $SERVER_DIRECTORY/map-gen-settings.json \
