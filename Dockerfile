@@ -18,6 +18,7 @@ RUN apt-get install -y libc6-dev curl sudo xz-utils
 COPY server .
 RUN chmod +x server
 EXPOSE 34197/udp
+VOLUME ["/factorio/data", "/factorio/lib"]
 CMD ./server -v $VERSION -m $MAP_NAME \
   -d $SERVER_DIRECTORY -ld $LIBRARY_DIRECTORY \
   $( [ "$SPACE_AGE_ENABLE" = "true" ] && echo "-sa" || echo "" ) \
