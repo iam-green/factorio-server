@@ -8,6 +8,10 @@ VERSION=stable
 MAP_NAME=factorio
 SINARIO=freeplay
 SPACE_AGE_ENABLE=false
+PORT=34197
+WHITELIST_ENABLE=false
+ELEVATED_RAILS_ENABLE=false
+QUALITY_ENABLE=false
 
 usage() {
   echo "Usage: $0 [OPTIONS]"
@@ -16,7 +20,11 @@ usage() {
   echo " -v, --version <version>                  Select the Factorio Version"
   echo " -m, --map-name <name>                    Select the Factorio Map Name"
   echo " -s, --sinario <sinario>                  Select the Factorio Sinario"
+  echo " -er, --elevated-rails                    Enable the Factorio Elevated Rails Mod"
+  echo " -q, --quality                            Enable the Factorio Quality Mod"
   echo " -sa, --space-age                         Enable the Factorio Space Age Mod"
+  echo " -p, --port <port>                        Select the Factorio Server Port"
+  echo " -w, --whitelist                          Enable the Factorio Server Whitelist"
   echo " -d, -sd, --server-directory <directory>  Select the path to install the Factorio Server"
   echo " -ld, --library-directory <directory>     Select the path to install the required libraries"
   echo " -u  --update                             Update the script to the latest version"
@@ -88,6 +96,18 @@ handle_argument() {
       ;;
     -f | --force-replace)
       FORCE_REPLACE=true
+      ;;
+    -p | --port)
+      if ! has_argument $@; then
+        echo "Port not specified." >&2
+        usage
+        exit 1
+      fi
+      PORT=$(extract_argument $@)
+      shift
+      ;;
+    -w | --whitelist)
+      WHITELIST_ENABLE=true
       ;;
     -u | --update)
       curl -s -o ./server -L https://raw.githubusercontent.com/iam-green/factorio-server/main/server
@@ -186,19 +206,15 @@ mod_setting() {
   if [ ! -d $SERVER_DIRECTORY/mods ]; then
     mkdir -p $SERVER_DIRECTORY/mods
   fi
-  if [ $SPACE_AGE_ENABLE ]; then
-    echo '{"mods": [{"name": "base","enabled": true},
-      {"name": "elevated-rails","enabled": true},
-      {"name": "quality","enabled": true},
-      {"name": "space-age","enabled": true}]
-    }' > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
-  else
-    echo '{"mods": [{"name": "base","enabled": true},
-      {"name": "elevated-rails","enabled": false},
-      {"name": "quality","enabled": false},
-      {"name": "space-age","enabled": false}]
-    }' > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
+  if [ $SPAVE_AGE_ENABLE ]; then
+    QUALITY_ENABLE=true
+    ELEVATED_RAILS_ENABLE=true
   fi
+  echo "{\"mods\": [{\"name\": \"base\",\"enabled\": true},
+    {\"name\": \"elevated-rails\",\"enabled\": $( [ "$ELEVATED_RAILS_ENABLE" = "true" ] && echo "true" || echo "false" )},
+    {\"name\": \"quality\",\"enabled\": $( [ "$QUALITY_ENABLE" = "true" ] && echo "true" || echo "false" )},
+    {\"name\": \"space-age\",\"enabled\": $( [ "$SPAVE_AGE_ENABLE" = "true" ] && echo "true" || echo "false" )}]}" \
+  > $LIBRARY_DIRECTORY/factorio/mods/mod-list.json
   rm -rf $LIBRARY_DIRECTORY/factorio/mods
   cp -r $SERVER_DIRECTORY/mods $LIBRARY_DIRECTORY/factorio
 }
@@ -207,7 +223,14 @@ mod_setting() {
 start_server() {
   sudo -u $USER $LIBRARY_DIRECTORY/factorio/bin/x64/factorio \
     --start-server $SERVER_DIRECTORY/$1.zip \
-    --server-settings $SERVER_DIRECTORY/server-settings.json
+    --server-settings $SERVER_DIRECTORY/server-settings.json \
+    --port $PORT \
+    $( [ "$WHITELIST_ENABLE" = "true" ] && echo "--use-server-whitelist	" || echo "" ) \
+    --server-whitelist $SERVER_DIRECTORY/server-whitelist.json \
+    --server-banlist $SERVER_DIRECTORY/server-banlist.json \
+    --server-adminlist $SERVER_DIRECTORY/server-adminlist.json \ 
+    --console-log $SERVER_DIRECTORY/factorio-current.log \
+    --server-id	$SERVER_DIRECTORY/server-id.json
 }
 
 if [[ $(uname) != "Linux" ]]; then

@@ -10,7 +10,11 @@ ENV UID=1000 \
   FORCE_REPLACE=false \
   VERSION=stable \ 
   MAP_NAME=factorio \
-  SPACE_AGE_ENABLE=false
+  ELEVATED_RAILS_ENABLE=false \
+  QUALITY_ENABLE=false \
+  SPACE_AGE_ENABLE=false \
+  PORT=34197 \
+  WHITELIST_ENABLE=false
 RUN mkdir -p /factorio
 WORKDIR /factorio
 RUN apt-get update -y
@@ -21,5 +25,8 @@ EXPOSE 34197/udp
 VOLUME ["/factorio/data", "/factorio/lib"]
 CMD ./server -v $VERSION -m $MAP_NAME \
   -d $SERVER_DIRECTORY -ld $LIBRARY_DIRECTORY \
+  $( [ "$ELEVATED_RAILS_ENABLE" = "true" ] && echo "-er" || echo "" ) \
+  $( [ "$QUALITY_ENABLE" = "true" ] && echo "-q" || echo "" ) \
   $( [ "$SPACE_AGE_ENABLE" = "true" ] && echo "-sa" || echo "" ) \
-  $( [ "$FORCE_REPLACE" = "true" ] && echo "-f" || echo "" )
+  $( [ "$FORCE_REPLACE" = "true" ] && echo "-f" || echo "" ) \
+  $( [ "$WHITELIST_ENABLE" = "true" ] && echo "-w" || echo "" )
