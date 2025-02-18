@@ -23,7 +23,7 @@ COPY server .
 RUN chmod +x server
 EXPOSE 34197/udp
 VOLUME ["/factorio/data", "/factorio/lib"]
-CMD ./server -v $VERSION -m $MAP_NAME \
+CMD ./server -v $VERSION -m $MAP_NAME -p $PORT \
   -d $SERVER_DIRECTORY -ld $LIBRARY_DIRECTORY \
   $( [ "$ELEVATED_RAILS_ENABLE" = "true" ] && echo "-er" || echo "" ) \
   $( [ "$QUALITY_ENABLE" = "true" ] && echo "-q" || echo "" ) \
