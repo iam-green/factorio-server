@@ -227,7 +227,7 @@ start_server() {
     --port $PORT \
     $( [ "$WHITELIST_ENABLE" = "true" ] && echo "--use-server-whitelist	--server-whitelist $SERVER_DIRECTORY/server-whitelist.json" || echo "" ) \
     --server-banlist $SERVER_DIRECTORY/server-banlist.json \
-    --server-adminlist $SERVER_DIRECTORY/server-adminlist.json \ 
+    --server-adminlist $SERVER_DIRECTORY/server-adminlist.json \
     --console-log $SERVER_DIRECTORY/factorio-current.log \
     --server-id	$SERVER_DIRECTORY/server-id.json
 }
