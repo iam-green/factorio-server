@@ -1,6 +1,6 @@
 @echo off
 
-set GITHUB_REPO=iam-green/auto-utils-template
+set GITHUB_REPO=iam-green/factorio-server
 set GITHUB_BRANCH=main
 
 if not exist "start.ps1" (

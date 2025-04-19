@@ -19,7 +19,7 @@ param(
 )
 
 # Default repository settings
-$GITHUB_REPO = "iam-green/auto-utils-template"  # GitHub repository.
+$GITHUB_REPO = "iam-green/factorio-server"  # GitHub repository.
 $GITHUB_BRANCH = "main"                         # GitHub branch to use for update.
 
 # Add your desired environment variables here

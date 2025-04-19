@@ -4,7 +4,7 @@ set -e  # Exit immediately on error
 # Default directories and repository settings
 DATA_DIRECTORY="."                           # Default data directory is the current directory.
 LIBRARY_DIRECTORY="$HOME/.iam-green"         # Default library directory.
-GITHUB_REPO="iam-green/auto-utils-template"  # GitHub repository.
+GITHUB_REPO="iam-green/factorio-server"  # GitHub repository.
 GITHUB_BRANCH="main"                         # GitHub branch to use for updates.
 
 # Add your desired environment variables here

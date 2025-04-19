@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-LABEL org.opencontainers.image.source="https://github.com/iam-green/auto-utils-template"
+LABEL org.opencontainers.image.source="https://github.com/iam-green/factorio-server"
 
 ARG DEBIAN_FRONTEND=noninteractive
 

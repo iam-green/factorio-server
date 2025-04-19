@@ -1,15 +1,12 @@
-# Auto Utils Template
-
-> This template repository provides a cross-platform setup for automation scripts using Docker, Batch, PowerShell, and Shell scripts.<br>
-> It helps you bootstrap repeatable environments quickly and consistently across Windows, macOS, and Linux.
+# Factorio Server 
 
 ## Docker
 
 ### Setup Command
 
 ```bash
-docker create -it --name auto-utils-template \
-  ghcr.io/iam-green/auto-utils-template
+docker create -it --name factorio-server \
+  ghcr.io/iam-green/factorio-server
 ```
 
 ### Environments
