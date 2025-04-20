@@ -441,6 +441,23 @@ mod_setting() {
 EOF
 }
 
+start_server() {
+  local whitelist_opts=""
+  if [ "$WHITELIST_ENABLE" = "true" ]; then
+    whitelist_opts="--use-server-whitelist --server-whitelist $DATA_DIRECTORY/server-whitelist.json"
+  fi
+
+  sudo -u "$USER" "$FACTORIO_CLI" \
+    --start-server "$DATA_DIRECTORY/$MAP_NAME.zip" \
+    --server-settings "$DATA_DIRECTORY/server-settings.json" \
+    --port "$PORT" \
+    $whitelist_opts \
+    --server-banlist "$DATA_DIRECTORY/server-banlist.json" \
+    --server-adminlist "$DATA_DIRECTORY/server-adminlist.json" \
+    --console-log "$DATA_DIRECTORY/factorio-current.log" \
+    --server-id "$DATA_DIRECTORY/server-id.json"
+}
+
 handle_argument "$@"
 set_timezone
 directory_setting
@@ -453,3 +470,4 @@ check_arch
 download_factorio
 server_setting
 mod_setting
+start_server
