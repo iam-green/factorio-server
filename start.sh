@@ -470,4 +470,5 @@ check_arch
 download_factorio
 server_setting
 mod_setting
+chown -R "$UID:$GID" "$DATA_DIRECTORY" "$FACTORIO_DIRECTORY" "$LIBRARY_DIRECTORY"
 start_server
