@@ -22,7 +22,8 @@ WORKDIR /app
 
 # Install required packages
 RUN apt-get update && \
-  apt-get install -y --no-install-recommends libc6-dev curl xz-utils sudo && \
+  apt-get install -y --no-install-recommends curl xz-utils sudo && \
+  apt-get install -y libc6 && \
   rm -rf /var/lib/apt/lists/*
 
 COPY entrypoint.sh .
