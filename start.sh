@@ -2,13 +2,14 @@
 set -e  # Exit immediately on error
 
 # Default directories and repository settings
-DATA_DIRECTORY="."                           # Default data directory is the current directory.
+DATA_DIRECTORY="./data"                           # Default data directory is the current directory.
 LIBRARY_DIRECTORY="$HOME/.iam-green"         # Default library directory.
 GITHUB_REPO="iam-green/factorio-server"  # GitHub repository.
 GITHUB_BRANCH="main"                         # GitHub branch to use for updates.
 
 # Add your desired environment variables here
 VERSION="stable"
+FACTORIO_DIRECTORY="./factorio"
 
 usage() {
   echo "Usage: $0 [OPTIONS]"
@@ -16,6 +17,7 @@ usage() {
   echo "  -h, --help                                   Display help and exit."
   echo "  -v, --version <stable|experimental|version>  Specify the version of Factorio to install."
   echo "  -d, -dd, --data-directory <directory>        Choose the data directory."
+  echo "  -fd, --factorio-directory <directory>        Choose the Factorio directory."
   echo "  -ld, --library-directory <directory>         Choose the library directory."
   echo "  -u, --update                                 Update code to the latest version."
 }
@@ -51,6 +53,15 @@ handle_argument() {
           exit 1
         fi
         DATA_DIRECTORY=$(extract_argument "$@")
+        shift
+        ;;
+      -fd|--factorio-directory)
+        if ! has_argument "$@"; then
+          echo "The directory is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        LIBRARY_DIRECTORY=$(extract_argument "$@")
         shift
         ;;
       -ld|--library-directory)
@@ -89,12 +100,16 @@ directory_setting() {
   if [ ! -d "$DATA_DIRECTORY" ]; then
     mkdir -p "$DATA_DIRECTORY"
   fi
+  if [ ! -d "$FACTORIO_DIRECTORY" ]; then
+    mkdir -p "$FACTORIO_DIRECTORY"
+  fi
   if [ ! -d "$LIBRARY_DIRECTORY" ]; then
     mkdir -p "$LIBRARY_DIRECTORY"
   fi
 
   # Resolve absolute paths
   DATA_DIRECTORY=$(realpath "$DATA_DIRECTORY")
+  FACTORIO_DIRECTORY=$(realpath "$FACTORIO_DIRECTORY")
   LIBRARY_DIRECTORY=$(realpath "$LIBRARY_DIRECTORY")
 }
 
