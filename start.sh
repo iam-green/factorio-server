@@ -9,6 +9,7 @@ GITHUB_BRANCH="main"                    # GitHub branch to use for updates.
 
 # Add your desired environment variables here
 VERSION="stable"
+MAP_NAME="factorio"
 FACTORIO_DIRECTORY="./factorio"
 FACTORIO_CLI=
 FACTORIO_USERNAME=
@@ -22,6 +23,7 @@ usage() {
   echo "Options:"
   echo "  -h, --help                                   Display help and exit."
   echo "  -v, --version <stable|experimental|version>  Specify the version of Factorio to install."
+  echo "  -m, --map-name <name>                        Specify the map name."
   echo "  -sa, --space-age                             Enable Space Age DLC."
   echo "  -er, --elevated-rails                        Enable Elevated Rails DLC."
   echo "  -q, --quality                                Enable Quality DLC."
@@ -55,6 +57,15 @@ handle_argument() {
           exit 1
         fi
         VERSION=$(extract_argument "$@")
+        shift
+        ;;
+      -m|--map-name)
+        if ! has_argument "$@"; then
+          echo "The map name is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        MAP_NAME=$(extract_argument "$@")
         shift
         ;;
       -sa|--space-age)
@@ -284,6 +295,7 @@ download_factorio() {
         echo "Factorio is already installed in $appPath"
         FACTORIO_CLI="$appPath/Contents/MacOS/factorio"
         [ -z "$(find "$FACTORIO_DIRECTORY" -mindepth 1 -print -quit)" ] && rm -rf "$FACTORIO_DIRECTORY"
+        FACTORIO_DIRECTORY="$base"
         return 0
       fi
     done
@@ -336,6 +348,27 @@ download_factorio() {
 
     echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
     FACTORIO_CLI="$FACTORIO_DIRECTORY/bin/x64/factorio"
+  fi
+}
+
+server_setting() {
+  local data="$FACTORIO_DIRECTORY/$( [ "$(get_os)" == "macos" ] && echo "factorio.app/Contents/data" || echo "data" )"
+
+  if [ ! -f "$data/server-settings.json" ]; then
+    cp "$data/server-settings.example.json" "$DATA_DIRECTORY/server-settings.json"
+  fi
+
+  local map_zip="$DATA_DIRECTORY/$MAP_NAME.zip"
+  if [ ! -f "$map_zip" ]; then
+    rm -rf "$DATA_DIRECTORY/mods/mod-list.json"
+    local map_settings="$DATA_DIRECTORY/map-settings.json"
+    local map_gen_settings="$DATA_DIRECTORY/map-gen-settings.json"
+    [ ! -f "$map_settings" ] && cp "$data/map-settings.example.json" "$map_settings"
+    [ ! -f "$map_gen_settings" ] && cp "$data/map-gen-settings.example.json" "$map_gen_settings"
+    sudo -u "$USER" "$FACTORIO_CLI" \
+      --create "$map_zip" \
+      --map-gen-settings "$map_gen_settings" \
+      --map-settings "$map_settings"
   fi
 }
 
@@ -402,4 +435,5 @@ get_factorio_version
 check_factorio_version_exist
 check_arch
 download_factorio
+server_setting
 mod_setting
