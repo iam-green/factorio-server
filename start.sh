@@ -2,10 +2,10 @@
 set -e  # Exit immediately on error
 
 # Default directories and repository settings
-DATA_DIRECTORY="./data"                           # Default data directory is the current directory.
-LIBRARY_DIRECTORY="$HOME/.iam-green"         # Default library directory.
-GITHUB_REPO="iam-green/factorio-server"  # GitHub repository.
-GITHUB_BRANCH="main"                         # GitHub branch to use for updates.
+DATA_DIRECTORY="./data"                 # Default data directory is the current directory.
+LIBRARY_DIRECTORY="$HOME/.iam-green"    # Default library directory.
+GITHUB_REPO="iam-green/factorio-server" # GitHub repository.
+GITHUB_BRANCH="main"                    # GitHub branch to use for updates.
 
 # Add your desired environment variables here
 VERSION="stable"
@@ -34,7 +34,7 @@ usage() {
 }
 
 has_argument() {
-  [[ ("$1" == *=* && -n "${1#*=}") || ( -n "$2" && "$2" != -* ) ]]
+  [[ ("$1" == *=* && -n "${1#*=}") || (-n "$2" && "$2" != -*) ]]
 }
 
 extract_argument() {
@@ -99,7 +99,7 @@ handle_argument() {
           usage
           exit 1
         fi
-        LIBRARY_DIRECTORY=$(extract_argument "$@")
+        FACTORIO_DIRECTORY=$(extract_argument "$@")
         shift
         ;;
       -ld|--library-directory)
@@ -170,7 +170,7 @@ create_group_user() {
 }
 
 get_os() {
-  if [ $(uname) == "Darwin" ]; then
+  if [ "$(uname)" == "Darwin" ]; then
     echo "macos"
   else
     echo "linux"
@@ -188,22 +188,16 @@ get_arch() {
   esac
 }
 
-handle_argument "$@"
-set_timezone
-directory_setting
-create_group_user
-
-# Add your desired functions or code from here
-
 install_jq() {
-  if [ ! -e $LIBRARY_DIRECTORY/jq ]; then
-    curl -s -o $LIBRARY_DIRECTORY/jq -L https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-$(get_os)-$(get_arch)
-    chmod +x $LIBRARY_DIRECTORY/jq
+  if [ ! -e "$LIBRARY_DIRECTORY/jq" ]; then
+    curl -s -o "$LIBRARY_DIRECTORY/jq" -L "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-$(get_os)-$(get_arch)"
+    chmod +x "$LIBRARY_DIRECTORY/jq"
   fi
 }
 
 get_factorio_version() {
-  local data=$(curl -s https://factorio.com/api/latest-releases)
+  local data
+  data=$(curl -s https://factorio.com/api/latest-releases)
   case "$VERSION" in
     stable)
       VERSION=$(echo "$data" | jq -r '.stable.alpha')
@@ -216,7 +210,8 @@ get_factorio_version() {
 
 check_factorio_version_exist() {
   local url="https://factorio.com/get-download/$VERSION/headless/linux64"
-  local http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  local http_code
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
   if [ "$http_code" -eq 404 ]; then
     echo "Factorio Version $VERSION does not exist." >&2
     exit 1
@@ -224,8 +219,10 @@ check_factorio_version_exist() {
 }
 
 check_arch() {
-  local arch=$(get_arch)
-  local os=$(get_os)
+  local arch
+  local os
+  arch=$(get_arch)
+  os=$(get_os)
   if [[ -z "$arch" || ( "$os" == "linux" && "$arch" == "arm64" ) ]]; then
     echo "Unsupported architecture: $arch" >&2
     exit 1
@@ -240,9 +237,18 @@ check_factorio_dlc() {
     location="$1/data"
   fi
 
-  [ "$SPACE_AGE_ENABLE" != "true" ] || [ -d "$location/space-age" ] || { echo "false"; return; }
-  [ "$ELEVATED_RAILS_ENABLE" != "true" ] || [ -d "$location/elevated-rails" ] || { echo "false"; return; }
-  [ "$QUALITY_ENABLE" != "true" ] || [ -d "$location/quality" ] || { echo "false"; return; }
+  if [ "$SPACE_AGE_ENABLE" == "true" ] && [ ! -d "$location/space-age" ]; then
+    echo "false"
+    return
+  fi
+  if [ "$ELEVATED_RAILS_ENABLE" == "true" ] && [ ! -d "$location/elevated-rails" ]; then
+    echo "false"
+    return
+  fi
+  if [ "$QUALITY_ENABLE" == "true" ] && [ ! -d "$location/quality" ]; then
+    echo "false"
+    return
+  fi
   echo "true"
 }
 
@@ -254,20 +260,27 @@ get_local_factorio_version() {
     binary="$1/bin/x64/factorio"
   fi
 
-  if [ -e $binary ]; then
-    echo $($binary --version | grep -oE 'Version: ([0-9]+\.[0-9]+\.[0-9]+)' | awk '{print $2}')
+  if [ -e "$binary" ]; then
+    "$binary" --version | grep -oE 'Version: ([0-9]+\.[0-9]+\.[0-9]+)' | awk '{print $2}'
   else
     echo "false"
   fi
 }
 
 download_factorio() {
-  local build=$([[ "$SPACE_AGE_ENABLE" == "true" || "$ELEVATED_RAILS_ENABLE" == "true" || "$QUALITY_ENABLE" == "true" ]] && echo "expansion" || echo "alpha")
+  local build
+  if [[ "$SPACE_AGE_ENABLE" == "true" || "$ELEVATED_RAILS_ENABLE" == "true" || "$QUALITY_ENABLE" == "true" ]]; then
+    build="expansion"
+  else
+    build="alpha"
+  fi
 
   if [ "$(get_os)" == "macos" ]; then
     for base in "/Applications" "$FACTORIO_DIRECTORY"; do
       appPath="$base/factorio.app"
-      if [[ -d "$appPath" && "$(check_factorio_dlc "$base")" == "true" && "$(get_local_factorio_version "$base")" == "$VERSION" ]]; then
+      if [[ -d "$appPath" ]] && \
+         [[ "$(check_factorio_dlc "$base")" == "true" ]] && \
+         [[ "$(get_local_factorio_version "$base")" == "$VERSION" ]]; then
         echo "Factorio is already installed in $appPath"
         FACTORIO_CLI="$appPath/Contents/MacOS/factorio"
         return 0
@@ -277,7 +290,8 @@ download_factorio() {
     echo "Downloading Factorio $VERSION $build for macOS..."
     local dmg_path="$FACTORIO_DIRECTORY/factorio.dmg"
     local download_url="https://www.factorio.com/get-download/$VERSION/$build/osx?username=$FACTORIO_USERNAME&token=$FACTORIO_TOKEN"
-    local http_code=$(curl -L -w "%{http_code}" -s -o "$dmg_path" "$download_url")
+    local http_code
+    http_code=$(curl -L -w "%{http_code}" -s -o "$dmg_path" "$download_url")
 
     if [ "$http_code" -eq 403 ]; then
       echo "Account information not provided or you do not have permission to download." >&2
@@ -286,7 +300,8 @@ download_factorio() {
 
     echo "Unpacking Factorio $VERSION $build for macOS..."
     rm -rf "$FACTORIO_DIRECTORY/factorio.app"
-    local volume=$(hdiutil attach "$dmg_path" -noverify | tail -1 | awk '{print $3}')
+    local volume
+    volume=$(hdiutil attach "$dmg_path" -noverify | tail -1 | awk '{print $3}')
     cp -r "$volume/"*.app "$FACTORIO_DIRECTORY/"
     diskutil unmount "$volume" > /dev/null 2>&1
     rm "$dmg_path"
@@ -294,32 +309,39 @@ download_factorio() {
     echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
     FACTORIO_CLI="$FACTORIO_DIRECTORY/factorio.app/Contents/MacOS/factorio"
   else
-    if [[ -d $FACTORIO_DIRECTORY && "$(get_local_factorio_version "$FACTORIO_DIRECTORY")" == "$VERSION" ]]; then
+    if [[ -d "$FACTORIO_DIRECTORY" ]] && \
+       [[ "$(get_local_factorio_version "$FACTORIO_DIRECTORY")" == "$VERSION" ]]; then
       echo "Factorio is already installed in $FACTORIO_DIRECTORY"
       FACTORIO_CLI="$FACTORIO_DIRECTORY/bin/x64/factorio"
       return 0
     fi
 
-    rm -rf $FACTORIO_DIRECTORY/*
+    rm -rf "$FACTORIO_DIRECTORY"/*
     echo "Downloading Factorio $VERSION $build for Linux..."
-    local http_code=$(curl -s -w "%{http_code}" -o $FACTORIO_DIRECTORY/factorio.tar.xz \
-      -L https://www.factorio.com/get-download/$VERSION/headless/linux64)
+    local http_code
+    http_code=$(curl -s -w "%{http_code}" -o "$FACTORIO_DIRECTORY/factorio.tar.xz" \
+      -L "https://www.factorio.com/get-download/$VERSION/headless/linux64")
 
     if [ "$http_code" -eq 429 ]; then
       echo "Rate limit exceeded. Please try again later." >&2
-      rm -rf $FACTORIO_DIRECTORY/factorio.tar.xz
+      rm -rf "$FACTORIO_DIRECTORY/factorio.tar.xz"
       exit 1
     fi
 
     echo "Unpacking Factorio $VERSION $build for Linux..."
-    tar -xJvf $FACTORIO_DIRECTORY/factorio.tar.xz -C $FACTORIO_DIRECTORY &>/dev/null
-    mv $FACTORIO_DIRECTORY/factorio/* $FACTORIO_DIRECTORY
-    rm -rf $FACTORIO_DIRECTORY/factorio $FACTORIO_DIRECTORY/factorio.tar.xz
+    tar -xJvf "$FACTORIO_DIRECTORY/factorio.tar.xz" -C "$FACTORIO_DIRECTORY" &>/dev/null
+    mv "$FACTORIO_DIRECTORY/factorio/"* "$FACTORIO_DIRECTORY"
+    rm -rf "$FACTORIO_DIRECTORY/factorio" "$FACTORIO_DIRECTORY/factorio.tar.xz"
 
     echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
     FACTORIO_CLI="$FACTORIO_DIRECTORY/bin/x64/factorio"
   fi
 }
+
+handle_argument "$@"
+set_timezone
+directory_setting
+create_group_user
 
 install_jq
 get_factorio_version
