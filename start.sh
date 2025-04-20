@@ -161,5 +161,16 @@ get_factorio_version() {
   esac
 }
 
+check_factorio_version_exist() {
+  local url="https://factorio.com/get-download/$VERSION/headless/linux64"
+  local http_code
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  if [ "$http_code" -eq 404 ]; then
+    echo "Factorio Version $VERSION does not exist." >&2
+    exit 1
+  fi
+}
+
 install_jq
 get_factorio_version
+check_factorio_version_exist
