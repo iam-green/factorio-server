@@ -15,6 +15,7 @@ ENV TZ=Asia/Seoul \
   PORT=34197 \
   WHITELIST_ENABLE=false \
   QUALITY_ENABLE=false \
+  ELEVATED_RAILS_ENABLE=false \
   SPACE_AGE_ENABLE=false
 
 WORKDIR /app
