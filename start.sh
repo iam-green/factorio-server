@@ -283,6 +283,7 @@ download_factorio() {
          [[ "$(get_local_factorio_version "$base")" == "$VERSION" ]]; then
         echo "Factorio is already installed in $appPath"
         FACTORIO_CLI="$appPath/Contents/MacOS/factorio"
+        [ -z "$(find "$FACTORIO_DIRECTORY" -mindepth 1 -print -quit)" ] && rm -rf "$FACTORIO_DIRECTORY"
         return 0
       fi
     done
@@ -338,6 +339,59 @@ download_factorio() {
   fi
 }
 
+mod_setting() {
+  local mod_dir="$DATA_DIRECTORY/mods"
+  local mod_file="$mod_dir/mod-list.json"
+  mkdir -p "$mod_dir"
+
+  # If space-age is enabled, force dependent mods enabled.
+  [ "$SPACE_AGE_ENABLE" = "true" ] && {
+    QUALITY_ENABLE=true
+    ELEVATED_RAILS_ENABLE=true
+  }
+
+  if [ -f "$mod_file" ]; then
+    local prev_data prev_enabled
+    prev_data=$(jq '.' "$mod_file")
+    for mod in "elevated-rails" "quality" "space-age"; do
+      prev_enabled=$(echo "$prev_data" | jq -r --arg mod "$mod" '.mods[] | select(.name == $mod) | .enabled')
+      if [ "$prev_enabled" = "true" ]; then
+        case "$mod" in
+          "elevated-rails")
+            if [ "$ELEVATED_RAILS_ENABLE" != "true" ]; then
+              echo "You cannot disable elevated-rails when it was enabled." >&2
+              ELEVATED_RAILS_ENABLE=true
+            fi
+            ;;
+          "quality")
+            if [ "$QUALITY_ENABLE" != "true" ]; then
+              echo "You cannot disable quality when it was enabled." >&2
+              QUALITY_ENABLE=true
+            fi
+            ;;
+          "space-age")
+            if [ "$SPACE_AGE_ENABLE" != "true" ]; then
+              echo "You cannot disable space-age when it was enabled." >&2
+              SPACE_AGE_ENABLE=true
+            fi
+            ;;
+        esac
+      fi
+    done
+  fi
+
+  cat > "$mod_file" <<EOF
+{
+  "mods": [
+    {"name": "base", "enabled": true},
+    {"name": "elevated-rails", "enabled": $( [ "$ELEVATED_RAILS_ENABLE" = "true" ] && echo "true" || echo "false" )},
+    {"name": "quality", "enabled": $( [ "$QUALITY_ENABLE" = "true" ] && echo "true" || echo "false" )},
+    {"name": "space-age", "enabled": $( [ "$SPACE_AGE_ENABLE" = "true" ] && echo "true" || echo "false" )}
+  ]
+}
+EOF
+}
+
 handle_argument "$@"
 set_timezone
 directory_setting
@@ -348,3 +402,4 @@ get_factorio_version
 check_factorio_version_exist
 check_arch
 download_factorio
+mod_setting
