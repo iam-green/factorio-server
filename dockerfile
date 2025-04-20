@@ -9,7 +9,7 @@ ENV TZ=Asia/Seoul \
   GID=1000 \
   DATA_DIRECTORY=/app/data \
   LIBRARY_DIRECTORY=/app/lib \
-  FACTORIO_DIRECTORY=/app/data/factorio \
+  FACTORIO_DIRECTORY=/app/factorio \
   VERSION=stable \ 
   MAP_NAME=factorio \
   PORT=34197 \
@@ -31,7 +31,7 @@ RUN chmod +x start.sh
 
 EXPOSE 34197/udp
 
-VOLUME ["/app/data", "/app/lib"]
+VOLUME ["/app/data", "/app/lib", "/app/factorio"]
 
 CMD ./start.sh -v $VERSION -m $MAP_NAME -p $PORT \
   -d ${DATA_DIRECTORY} -ld ${LIBRARY_DIRECTORY} -fd ${FACTORIO_DIRECTORY} \
