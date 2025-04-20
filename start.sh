@@ -454,6 +454,7 @@ start_server() {
   sudo -u "$USER" "$FACTORIO_CLI" \
     --start-server "$DATA_DIRECTORY/$MAP_NAME.zip" \
     --server-settings "$DATA_DIRECTORY/server-settings.json" \
+    --mod-directory "$DATA_DIRECTORY/mods" \
     --port "$PORT" \
     $whitelist_opts \
     --server-banlist "$DATA_DIRECTORY/server-banlist.json" \
