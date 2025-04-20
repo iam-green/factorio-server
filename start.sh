@@ -388,6 +388,10 @@ server_setting() {
   fi
 }
 
+set_chown() {
+  chown -R "$USER" "$DATA_DIRECTORY" "$FACTORIO_DIRECTORY" "$LIBRARY_DIRECTORY"
+}
+
 mod_setting() {
   local mod_dir="$DATA_DIRECTORY/mods"
   local mod_file="$mod_dir/mod-list.json"
@@ -468,7 +472,8 @@ get_factorio_version
 check_factorio_version_exist
 check_arch
 download_factorio
+set_chown
 server_setting
 mod_setting
-chown -R "$UID:$GID" "$DATA_DIRECTORY" "$FACTORIO_DIRECTORY" "$LIBRARY_DIRECTORY"
+set_chown
 start_server
