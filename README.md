@@ -6,6 +6,9 @@
 
 ```bash
 docker create -it --name factorio-server \
+  -v /path/to/data:/app/data \
+  -v /path/to/lib:/app/lib \
+  -v /path/to/factorio:/app/factorio \
   ghcr.io/iam-green/factorio-server:latest
 ```
 
