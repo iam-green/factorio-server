@@ -132,3 +132,12 @@ directory_setting
 create_group_user
 
 # Add your desired functions or code from here
+
+install_jq() {
+  if [ ! -e $LIBRARY_DIRECTORY/jq ]; then
+    curl -s -o $LIBRARY_DIRECTORY/jq -L https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-$(get_os)-$(get_arch)
+    chmod +x $LIBRARY_DIRECTORY/jq
+  fi
+}
+
+install_jq
