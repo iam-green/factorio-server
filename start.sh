@@ -12,10 +12,11 @@ GITHUB_BRANCH="main"                         # GitHub branch to use for updates.
 usage() {
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
-  echo "  -h, --help                             Display help and exit."
-  echo "  -d, -dd, --data-directory <directory>  Choose the data directory."
-  echo "  -ld, --library-directory <directory>   Choose the library directory."
-  echo "  -u, --update                           Update code to the latest version."
+  echo "  -h, --help                                   Display help and exit."
+  echo "  -v, --version <stable|experimental|version>  Specify the version of Factorio to install."
+  echo "  -d, -dd, --data-directory <directory>        Choose the data directory."
+  echo "  -ld, --library-directory <directory>         Choose the library directory."
+  echo "  -u, --update                                 Update code to the latest version."
 }
 
 has_argument() {
@@ -104,6 +105,25 @@ create_group_user() {
     useradd -u "$UID" -g "$GID" -m user
   fi
   USER=$( [ "$(uname)" = "Darwin" ] && id -un "$UID" || getent passwd "$UID" | cut -d: -f1 )
+}
+
+get_os() {
+  if [ $(uname) == "Darwin" ]; then
+    echo "macos"
+  else
+    echo "linux"
+  fi
+}
+
+get_arch() {
+  case $(uname -m) in
+    "x86_64")
+      echo "amd64"
+      ;;
+    "arm64" | "aarch64")
+      echo "arm64"
+      ;;
+  esac
 }
 
 handle_argument "$@"
