@@ -6,6 +6,7 @@
 
 ```bash
 docker create -it --name factorio-server \
+  -p 34197:34197/udp \
   -v /path/to/data:/app/data \
   -v /path/to/lib:/app/lib \
   -v /path/to/factorio:/app/factorio \
