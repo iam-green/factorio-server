@@ -10,12 +10,23 @@ GITHUB_BRANCH="main"                         # GitHub branch to use for updates.
 # Add your desired environment variables here
 VERSION="stable"
 FACTORIO_DIRECTORY="./factorio"
+FACTORIO_CLI=
+FACTORIO_USERNAME=
+FACTORIO_TOKEN=
+SPACE_AGE_ENABLE=false
+ELEVATED_RAILS_ENABLE=false
+QUALITY_ENABLE=false
 
 usage() {
   echo "Usage: $0 [OPTIONS]"
   echo "Options:"
   echo "  -h, --help                                   Display help and exit."
   echo "  -v, --version <stable|experimental|version>  Specify the version of Factorio to install."
+  echo "  -sa, --space-age                             Enable Space Age DLC."
+  echo "  -er, --elevated-rails                        Enable Elevated Rails DLC."
+  echo "  -q, --quality                                Enable Quality DLC."
+  echo "  -u, --username <username>                    Specify the Factorio account username."
+  echo "  -t, --token <token>                          Specify the Factorio account token."
   echo "  -d, -dd, --data-directory <directory>        Choose the data directory."
   echo "  -fd, --factorio-directory <directory>        Choose the Factorio directory."
   echo "  -ld, --library-directory <directory>         Choose the library directory."
@@ -44,6 +55,33 @@ handle_argument() {
           exit 1
         fi
         VERSION=$(extract_argument "$@")
+        shift
+        ;;
+      -sa|--space-age)
+        SPACE_AGE_ENABLE=true
+        ;;
+      -er|--elevated-rails)
+        ELEVATED_RAILS_ENABLE=true
+        ;;
+      -q|--quality)
+        QUALITY_ENABLE=true
+        ;;
+      -u|--username)
+        if ! has_argument "$@"; then
+          echo "The username is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        FACTORIO_USERNAME=$(extract_argument "$@")
+        shift
+        ;;
+      -t|--token)
+        if ! has_argument "$@"; then
+          echo "The token is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        FACTORIO_TOKEN=$(extract_argument "$@")
         shift
         ;;
       -d|-dd|--data-directory)
@@ -178,8 +216,7 @@ get_factorio_version() {
 
 check_factorio_version_exist() {
   local url="https://factorio.com/get-download/$VERSION/headless/linux64"
-  local http_code
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  local http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
   if [ "$http_code" -eq 404 ]; then
     echo "Factorio Version $VERSION does not exist." >&2
     exit 1
@@ -188,9 +225,99 @@ check_factorio_version_exist() {
 
 check_arch() {
   local arch=$(get_arch)
-  if [ -z "$arch" ]; then
+  local os=$(get_os)
+  if [[ -z "$arch" || ( "$os" == "linux" && "$arch" == "arm64" ) ]]; then
     echo "Unsupported architecture: $arch" >&2
     exit 1
+  fi
+}
+
+check_factorio_dlc() {
+  local location
+  if [ "$(get_os)" == "macos" ]; then
+    location="$1/factorio.app/Contents/data"
+  else
+    location="$1/data"
+  fi
+
+  [ "$SPACE_AGE_ENABLE" != "true" ] || [ -d "$location/space-age" ] || { echo "false"; return; }
+  [ "$ELEVATED_RAILS_ENABLE" != "true" ] || [ -d "$location/elevated-rails" ] || { echo "false"; return; }
+  [ "$QUALITY_ENABLE" != "true" ] || [ -d "$location/quality" ] || { echo "false"; return; }
+  echo "true"
+}
+
+get_local_factorio_version() {
+  local binary
+  if [ "$(get_os)" == "macos" ]; then
+    binary="$1/factorio.app/Contents/MacOS/factorio"
+  else
+    binary="$1/bin/x64/factorio"
+  fi
+
+  if [ -e $binary ]; then
+    echo $($binary --version | grep -oE 'Version: ([0-9]+\.[0-9]+\.[0-9]+)' | awk '{print $2}')
+  else
+    echo "false"
+  fi
+}
+
+download_factorio() {
+  local build=$([[ "$SPACE_AGE_ENABLE" == "true" || "$ELEVATED_RAILS_ENABLE" == "true" || "$QUALITY_ENABLE" == "true" ]] && echo "expansion" || echo "alpha")
+
+  if [ "$(get_os)" == "macos" ]; then
+    for base in "/Applications" "$FACTORIO_DIRECTORY"; do
+      appPath="$base/factorio.app"
+      if [[ -d "$appPath" && "$(check_factorio_dlc "$base")" == "true" && "$(get_local_factorio_version "$base")" == "$VERSION" ]]; then
+        echo "Factorio is already installed in $appPath"
+        FACTORIO_CLI="$appPath/Contents/MacOS/factorio"
+        return 0
+      fi
+    done
+
+    echo "Downloading Factorio $VERSION $build for macOS..."
+    local dmg_path="$FACTORIO_DIRECTORY/factorio.dmg"
+    local download_url="https://www.factorio.com/get-download/$VERSION/$build/osx?username=$FACTORIO_USERNAME&token=$FACTORIO_TOKEN"
+    local http_code=$(curl -L -w "%{http_code}" -s -o "$dmg_path" "$download_url")
+
+    if [ "$http_code" -eq 403 ]; then
+      echo "Account information not provided or you do not have permission to download." >&2
+      exit 1
+    fi
+
+    echo "Unpacking Factorio $VERSION $build for macOS..."
+    rm -rf "$FACTORIO_DIRECTORY/factorio.app"
+    local volume=$(hdiutil attach "$dmg_path" -noverify | tail -1 | awk '{print $3}')
+    cp -r "$volume/"*.app "$FACTORIO_DIRECTORY/"
+    diskutil unmount "$volume" > /dev/null 2>&1
+    rm "$dmg_path"
+
+    echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
+    FACTORIO_CLI="$FACTORIO_DIRECTORY/factorio.app/Contents/MacOS/factorio"
+  else
+    if [[ -d $FACTORIO_DIRECTORY && "$(get_local_factorio_version "$FACTORIO_DIRECTORY")" == "$VERSION" ]]; then
+      echo "Factorio is already installed in $FACTORIO_DIRECTORY"
+      FACTORIO_CLI="$FACTORIO_DIRECTORY/bin/x64/factorio"
+      return 0
+    fi
+
+    rm -rf $FACTORIO_DIRECTORY/*
+    echo "Downloading Factorio $VERSION $build for Linux..."
+    local http_code=$(curl -s -w "%{http_code}" -o $FACTORIO_DIRECTORY/factorio.tar.xz \
+      -L https://www.factorio.com/get-download/$VERSION/headless/linux64)
+
+    if [ "$http_code" -eq 429 ]; then
+      echo "Rate limit exceeded. Please try again later." >&2
+      rm -rf $FACTORIO_DIRECTORY/factorio.tar.xz
+      exit 1
+    fi
+
+    echo "Unpacking Factorio $VERSION $build for Linux..."
+    tar -xJvf $FACTORIO_DIRECTORY/factorio.tar.xz -C $FACTORIO_DIRECTORY &>/dev/null
+    mv $FACTORIO_DIRECTORY/factorio/* $FACTORIO_DIRECTORY
+    rm -rf $FACTORIO_DIRECTORY/factorio $FACTORIO_DIRECTORY/factorio.tar.xz
+
+    echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
+    FACTORIO_CLI="$FACTORIO_DIRECTORY/bin/x64/factorio"
   fi
 }
 
@@ -198,3 +325,4 @@ install_jq
 get_factorio_version
 check_factorio_version_exist
 check_arch
+download_factorio
