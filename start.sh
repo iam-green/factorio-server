@@ -171,6 +171,15 @@ check_factorio_version_exist() {
   fi
 }
 
+check_arch() {
+  local arch=$(get_arch)
+  if [ -z "$arch" ]; then
+    echo "Unsupported architecture: $arch" >&2
+    exit 1
+  fi
+}
+
 install_jq
 get_factorio_version
 check_factorio_version_exist
+check_arch
