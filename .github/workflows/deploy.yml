@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "start.sh"
+      - "entrypoint.sh"
       - "dockerfile"
     branches:
       - main
