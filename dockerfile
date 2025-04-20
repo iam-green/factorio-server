@@ -33,7 +33,7 @@ EXPOSE 34197/udp
 VOLUME ["/app/data", "/app/lib"]
 
 CMD ./start.sh -v $VERSION -m $MAP_NAME -p $PORT \
-  -d ${DATA_DIRECTORY} -ld ${LIBRARY_DIRECTORY} \
+  -d ${DATA_DIRECTORY} -ld ${LIBRARY_DIRECTORY} -fd ${FACTORIO_DIRECTORY} \
   $( [ "${WHITELIST_ENABLE}" = "true" ] && echo "-w" || echo "" ) \
   $( [ "${ELEVATED_RAILS_ENABLE}" = "true" ] && echo "-er" || echo "" ) \
   $( [ "${QUALITY_ENABLE}" = "true" ] && echo "-q" || echo "" ) \

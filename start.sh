@@ -34,8 +34,8 @@ usage() {
   echo "  -u, --username <username>                    Specify the Factorio account username."
   echo "  -t, --token <token>                          Specify the Factorio account token."
   echo "  -d, -dd, --data-directory <directory>        Choose the data directory."
-  echo "  -fd, --factorio-directory <directory>        Choose the Factorio directory."
   echo "  -ld, --library-directory <directory>         Choose the library directory."
+  echo "  -fd, --factorio-directory <directory>        Choose the Factorio directory."
   echo "  -u, --update                                 Update code to the latest version."
 }
 
