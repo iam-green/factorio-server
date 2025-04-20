@@ -6,26 +6,26 @@
 
 ```bash
 docker create -it --name factorio-server \
-  ghcr.io/iam-green/factorio-server
+  ghcr.io/iam-green/factorio-server:latest
 ```
 
 ### Environments
 
-|   Environment Name    |      Description       |    Default Value     |
-| :-------------------: | :--------------------: | :------------------: |
-|          TZ           |      Set Timezone      |     `Asia/Seoul`     |
-|          UID          |      Set User ID       |        `1000`        |
-|          GID          |      Set Group ID      |        `1000`        |
-|    DATA_DIRECTORY     |   Set Data Directory   |     `/app/data`      |
-|   LIBRARY_DIRECTORY   | Set Library Directory  |      `/app/lib`      |
-|  FACTORIO_DIRECTORY   | Set Factorio Directory | `/app/data/factorio` |
-|        VERSION        |  Set Factorio Version  |       `stable`       |
-|       MAP_NAME        |      Set Map Name      |      `factorio`      |
-|         PORT          |        Set Port        |       `34197`        |
-|   WHITELIST_ENABLE    |    Enable Whitelist    |       `false`        |
-|    QUALITY_ENABLE     |     Enable Quality     |       `false`        |
-| ELEVATED_RAILS_ENABLE | Enable Elevated Rails  |       `false`        |
-|   SPACE_AGE_ENABLE    |    Enable Space Age    |       `false`        |
+|   Environment Name    |        Description        |    Default Value     |
+| :-------------------: | :-----------------------: | :------------------: |
+|          TZ           |       Set Timezone        |     `Asia/Seoul`     |
+|          UID          |        Set User ID        |        `1000`        |
+|          GID          |       Set Group ID        |        `1000`        |
+|    DATA_DIRECTORY     |    Set Data Directory     |     `/app/data`      |
+|   LIBRARY_DIRECTORY   |   Set Library Directory   |      `/app/lib`      |
+|  FACTORIO_DIRECTORY   |  Set Factorio Directory   | `/app/data/factorio` |
+|        VERSION        |   Set Factorio Version    |       `stable`       |
+|       MAP_NAME        |       Set Map Name        |      `factorio`      |
+|         PORT          |         Set Port          |       `34197`        |
+|   WHITELIST_ENABLE    |     Enable Whitelist      |       `false`        |
+|    QUALITY_ENABLE     |    Enable Quality DLC     |       `false`        |
+| ELEVATED_RAILS_ENABLE | Enable Elevated Rails DLC |       `false`        |
+|   SPACE_AGE_ENABLE    |   Enable Space Age DLC    |       `false`        |
 
 ## Windows
 
