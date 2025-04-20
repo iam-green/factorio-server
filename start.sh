@@ -10,6 +10,8 @@ GITHUB_BRANCH="main"                    # GitHub branch to use for updates.
 # Add your desired environment variables here
 VERSION="stable"
 MAP_NAME="factorio"
+PORT=34197
+WHITELIST_ENABLE=false
 FACTORIO_DIRECTORY="./factorio"
 FACTORIO_CLI=
 FACTORIO_USERNAME=
@@ -24,6 +26,8 @@ usage() {
   echo "  -h, --help                                   Display help and exit."
   echo "  -v, --version <stable|experimental|version>  Specify the version of Factorio to install."
   echo "  -m, --map-name <name>                        Specify the map name."
+  echo "  -p, --port <port>                            Specify the port number."
+  echo "  -w, --whitelist                              Enable whitelist."
   echo "  -sa, --space-age                             Enable Space Age DLC."
   echo "  -er, --elevated-rails                        Enable Elevated Rails DLC."
   echo "  -q, --quality                                Enable Quality DLC."
@@ -58,6 +62,18 @@ handle_argument() {
         fi
         VERSION=$(extract_argument "$@")
         shift
+        ;;
+      -p|--port)
+        if ! has_argument "$@"; then
+          echo "The port is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        PORT=$(extract_argument "$@")
+        shift
+        ;;
+      -w|--whitelist)
+        WHITELIST_ENABLE=true
         ;;
       -m|--map-name)
         if ! has_argument "$@"; then
