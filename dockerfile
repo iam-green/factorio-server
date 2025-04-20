@@ -10,7 +10,7 @@ ENV TZ=Asia/Seoul \
   DATA_DIRECTORY=/app/data \
   LIBRARY_DIRECTORY=/app/lib \
   FACTORIO_DIRECTORY=/app/factorio \
-  VERSION=stable \ 
+  VERSION=stable \
   MAP_NAME=factorio \
   PORT=34197 \
   WHITELIST_ENABLE=false \
@@ -25,17 +25,14 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends libc6-dev curl xz-utils sudo && \
   rm -rf /var/lib/apt/lists/*
 
-COPY start.sh .
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
+COPY start.sh .
 RUN chmod +x start.sh
 
 EXPOSE 34197/udp
 
 VOLUME ["/app/data", "/app/lib", "/app/factorio"]
 
-CMD ./start.sh -v $VERSION -m $MAP_NAME -p $PORT \
-  -d ${DATA_DIRECTORY} -ld ${LIBRARY_DIRECTORY} -fd ${FACTORIO_DIRECTORY} \
-  $( [ "${WHITELIST_ENABLE}" = "true" ] && echo "-w" || echo "" ) \
-  $( [ "${ELEVATED_RAILS_ENABLE}" = "true" ] && echo "-er" || echo "" ) \
-  $( [ "${QUALITY_ENABLE}" = "true" ] && echo "-q" || echo "" ) \
-  $( [ "${SPACE_AGE_ENABLE}" = "true" ] && echo "-sa" || echo "" )
+ENTRYPOINT ["./entrypoint.sh"]
