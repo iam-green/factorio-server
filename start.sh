@@ -227,10 +227,10 @@ get_factorio_version() {
   data=$(curl -s https://factorio.com/api/latest-releases)
   case "$VERSION" in
     stable)
-      VERSION=$(echo "$data" | jq -r '.stable.alpha')
+      VERSION=$(echo "$data" | "$LIBRARY_DIRECTORY/jq" -r '.stable.alpha')
       ;;
     experimental)
-      VERSION=$(echo "$data" | jq -r '.experimental.alpha')
+      VERSION=$(echo "$data" | "$LIBRARY_DIRECTORY/jq" -r '.experimental.alpha')
       ;;
   esac
 }
@@ -401,9 +401,9 @@ mod_setting() {
 
   if [ -f "$mod_file" ]; then
     local prev_data prev_enabled
-    prev_data=$(jq '.' "$mod_file")
+    prev_data=$("$LIBRARY_DIRECTORY/jq" '.' "$mod_file")
     for mod in "elevated-rails" "quality" "space-age"; do
-      prev_enabled=$(echo "$prev_data" | jq -r --arg mod "$mod" '.mods[] | select(.name == $mod) | .enabled')
+      prev_enabled=$(echo "$prev_data" | "$LIBRARY_DIRECTORY/jq" -r --arg mod "$mod" '.mods[] | select(.name == $mod) | .enabled')
       if [ "$prev_enabled" = "true" ]; then
         case "$mod" in
           "elevated-rails")
