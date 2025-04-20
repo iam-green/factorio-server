@@ -8,6 +8,7 @@ GITHUB_REPO="iam-green/factorio-server"  # GitHub repository.
 GITHUB_BRANCH="main"                         # GitHub branch to use for updates.
 
 # Add your desired environment variables here
+VERSION="stable"
 
 usage() {
   echo "Usage: $0 [OPTIONS]"
@@ -34,6 +35,15 @@ handle_argument() {
         usage
         exit 0
         ;;
+      -v|--version)
+        if ! has_argument "$@"; then
+          echo "The version is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        VERSION=$(extract_argument "$@")
+        shift
+        ;;
       -d|-dd|--data-directory)
         if ! has_argument "$@"; then
           echo "The directory is not specified correctly." >&2
@@ -59,7 +69,6 @@ handle_argument() {
         echo "Code updated. Please re-run the code."
         exit 0
         ;;
-      # Add your desired parameters here
       *)
         echo "Invalid option: $1" >&2
         usage
@@ -140,4 +149,17 @@ install_jq() {
   fi
 }
 
+get_factorio_version() {
+  local data=$(curl -s https://factorio.com/api/latest-releases)
+  case "$VERSION" in
+    stable)
+      VERSION=$(echo "$data" | jq -r '.stable.alpha')
+      ;;
+    experimental)
+      VERSION=$(echo "$data" | jq -r '.experimental.alpha')
+      ;;
+  esac
+}
+
 install_jq
+get_factorio_version
