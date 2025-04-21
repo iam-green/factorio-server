@@ -370,7 +370,7 @@ download_factorio() {
 server_setting() {
   local data="$FACTORIO_DIRECTORY/$( [ "$(get_os)" == "macos" ] && echo "factorio.app/Contents/data" || echo "data" )"
 
-  if [ ! -f "$data/server-settings.json" ]; then
+  if [ ! -f "$DATA_DIRECTORY/server-settings.json" ]; then
     cp "$data/server-settings.example.json" "$DATA_DIRECTORY/server-settings.json"
   fi
 
