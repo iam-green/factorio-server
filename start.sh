@@ -389,7 +389,9 @@ server_setting() {
 }
 
 set_chown() {
-  chown -R "$USER" "$DATA_DIRECTORY" "$FACTORIO_DIRECTORY" "$LIBRARY_DIRECTORY"
+  if [ -f /.dockerenv ]; then
+    chown -R "$USER" "$DATA_DIRECTORY" "$FACTORIO_DIRECTORY" "$LIBRARY_DIRECTORY"
+  fi
 }
 
 mod_setting() {
