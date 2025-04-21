@@ -18,6 +18,8 @@ param(
   [switch]$CodeUpdate
 )
 
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
 foreach ($paramName in $MyInvocation.MyCommand.Parameters.Keys) {
   Set-Variable -Name $paramName -Value (Get-Variable -Name $paramName -ValueOnly) -Scope Global
 }
