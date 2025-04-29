@@ -14,6 +14,7 @@ PORT=34197
 WHITELIST_ENABLE=false
 FACTORIO_DIRECTORY="./factorio"
 FACTORIO_CLI=
+FACTORIO_DATA=
 FACTORIO_USERNAME=
 FACTORIO_TOKEN=
 SPACE_AGE_ENABLE=false
@@ -312,6 +313,7 @@ download_factorio() {
         FACTORIO_CLI="$appPath/Contents/MacOS/factorio"
         [ -z "$(find "$FACTORIO_DIRECTORY" -mindepth 1 -print -quit)" ] && rm -rf "$FACTORIO_DIRECTORY"
         FACTORIO_DIRECTORY="$base"
+        FACTORIO_DATA="$FACTORIO_DIRECTORY/factorio.app/Contents/data"
         return 0
       fi
     done
@@ -337,6 +339,7 @@ download_factorio() {
 
     echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
     FACTORIO_CLI="$FACTORIO_DIRECTORY/factorio.app/Contents/MacOS/factorio"
+    FACTORIO_DATA="$FACTORIO_DIRECTORY/factorio.app/Contents/data"
   else
     if [[ -d "$FACTORIO_DIRECTORY" ]] && \
        [[ "$(get_local_factorio_version "$FACTORIO_DIRECTORY")" == "$VERSION" ]]; then
@@ -364,14 +367,13 @@ download_factorio() {
 
     echo "Factorio $VERSION $build downloaded and installed in $FACTORIO_DIRECTORY"
     FACTORIO_CLI="$FACTORIO_DIRECTORY/bin/x64/factorio"
+    FACTORIO_DATA="$FACTORIO_DIRECTORY/data"
   fi
 }
 
 server_setting() {
-  local data="$FACTORIO_DIRECTORY/$( [ "$(get_os)" == "macos" ] && echo "factorio.app/Contents/data" || echo "data" )"
-
   if [ ! -f "$DATA_DIRECTORY/server-settings.json" ]; then
-    cp "$data/server-settings.example.json" "$DATA_DIRECTORY/server-settings.json"
+    cp "$FACTORIO_DATA/server-settings.example.json" "$DATA_DIRECTORY/server-settings.json"
   fi
 
   local map_zip="$DATA_DIRECTORY/$MAP_NAME.zip"
@@ -379,8 +381,8 @@ server_setting() {
     rm -rf "$DATA_DIRECTORY/mods/mod-list.json"
     local map_settings="$DATA_DIRECTORY/map-settings.json"
     local map_gen_settings="$DATA_DIRECTORY/map-gen-settings.json"
-    [ ! -f "$map_settings" ] && cp "$data/map-settings.example.json" "$map_settings"
-    [ ! -f "$map_gen_settings" ] && cp "$data/map-gen-settings.example.json" "$map_gen_settings"
+    [ ! -f "$map_settings" ] && cp "$FACTORIO_DATA/map-settings.example.json" "$map_settings"
+    [ ! -f "$map_gen_settings" ] && cp "$FACTORIO_DATA/map-gen-settings.example.json" "$map_gen_settings"
     sudo -u "$USER" "$FACTORIO_CLI" \
       --create "$map_zip" \
       --map-gen-settings "$map_gen_settings" \
