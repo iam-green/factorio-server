@@ -16,6 +16,7 @@ FACTORIO_DIRECTORY="./factorio"
 FACTORIO_CLI=
 FACTORIO_DATA=
 FACTORIO_USERNAME=
+FACTORIO_PASSWORD=
 FACTORIO_TOKEN=
 SPACE_AGE_ENABLE=false
 ELEVATED_RAILS_ENABLE=false
@@ -33,6 +34,7 @@ usage() {
   echo "  -er, --elevated-rails                        Enable Elevated Rails DLC."
   echo "  -q, --quality                                Enable Quality DLC."
   echo "  -u, --username <username>                    Specify the Factorio account username."
+  echo "  -pw, --password <password>                   Specify the Factorio account password."
   echo "  -t, --token <token>                          Specify the Factorio account token."
   echo "  -d, -dd, --data-directory <directory>        Choose the data directory."
   echo "  -ld, --library-directory <directory>         Choose the library directory."
@@ -101,6 +103,15 @@ handle_argument() {
           exit 1
         fi
         FACTORIO_USERNAME=$(extract_argument "$@")
+        shift
+        ;;
+      -pw|--password)
+        if ! has_argument "$@"; then
+          echo "The password is not specified correctly." >&2
+          usage
+          exit 1
+        fi
+        FACTORIO_PASSWORD=$(extract_argument "$@")
         shift
         ;;
       -t|--token)
@@ -223,6 +234,21 @@ install_jq() {
   fi
 }
 
+encode_uri() {
+  local encoded_str
+  encoded_str=$(echo -n "$1" | "$LIBRARY_DIRECTORY/jq" -sRr @uri)
+  echo "$encoded_str"
+}
+
+get_factorio_token() {
+  local data=$(
+    curl -s --request POST --url "https://auth.factorio.com/api-login" \
+      --header "Content-Type: application/x-www-form-urlencoded" \
+      --data "require_game_ownership=true&api_version=3&username=$FACTORIO_USERNAME&password=$FACTORIO_PASSWORD"
+  )
+  FACTORIO_TOKEN=$(echo $data | "$LIBRARY_DIRECTORY/jq" -r ".token")
+}
+
 get_factorio_version() {
   local data
   data=$(curl -s https://factorio.com/api/latest-releases)
@@ -319,6 +345,7 @@ download_factorio() {
     done
 
     echo "Downloading Factorio $VERSION $build for macOS..."
+    get_factorio_token
     local dmg_path="$FACTORIO_DIRECTORY/factorio.dmg"
     local download_url="https://www.factorio.com/get-download/$VERSION/$build/osx?username=$FACTORIO_USERNAME&token=$FACTORIO_TOKEN"
     local http_code

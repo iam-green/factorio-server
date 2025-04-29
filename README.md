@@ -68,6 +68,7 @@ chmod +x ./start.sh && ./start.sh
   -er, --elevated-rails                        Enable Elevated Rails DLC.
   -q, --quality                                Enable Quality DLC.
   -u, --username <username>                    Specify the Factorio account username.
+  -pw, --password <password>                   Specify the Factorio account password.
   -t, --token <token>                          Specify the Factorio account token.
   -d, -dd, --data-directory <directory>        Choose the data directory.
   -ld, --library-directory <directory>         Choose the library directory.
